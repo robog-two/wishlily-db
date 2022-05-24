@@ -360,7 +360,7 @@ router.post('/get_wishlist_info', async (ctx) => {
   }
 
   const wishlistObj = await mongo.database('wishlily').collection('user_wishlists').findOne({
-    _id: new Bson.ObjectId(wishlistId.toString())
+    '_id': new Bson.ObjectId(wishlistId.toString())
   })
 
   if (wishlistObj?.userId === undefined) {
@@ -375,12 +375,13 @@ router.post('/get_wishlist_info', async (ctx) => {
 
   let doc = await mongo.database('wishlily').collection(`user_wishlists`).findOne({
     userId,
-    _id: new Bson.ObjectId(wishlistId)
+    '_id': new Bson.ObjectId(wishlistId)
   })
+
+  console.log(doc)
 
   ctx.response.status = 200
   ctx.response.body = {
-    id: doc?._id?.toString(),
     title: doc?.title,
     address: doc?.address,
     color: doc?.color
