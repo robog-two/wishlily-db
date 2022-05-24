@@ -40,7 +40,7 @@ router.post('/add_item_to_wishlist', async (ctx) => {
     throw new Error('User ID failed to validate')
   }
 
-  const embed = await (await fetch(`${Deno.env.get('ENVIRONMENT') === 'production' ? 'https://proxy.wishlily.app' : 'http://localhost:8081'}/generic/product?id=${encodeURIComponent(json.link)})`)).json()
+  const embed = await (await fetch(`${Deno.env.get('ENVIRONMENT') === 'production' ? 'https://proxy.wishlily.app' : 'http://localhost:8080'}/generic/product?id=${encodeURIComponent(json.link)})`)).json()
 
   console.log(embed)
 
@@ -59,17 +59,17 @@ router.post('/add_item_to_wishlist', async (ctx) => {
     throw new Error('User Key does not match!')
   }
 
-  await mongo.database('wishlily').collection(`wishes`).insertOne({
+  const doc = (await mongo.database('wishlily').collection(`wishes`).insertOne({
     userId,
     wishlistId,
     cover,
     title,
     price,
     link
-  });
+  }))
 
   ctx.response.status = 200
-  ctx.response.body = { embed, success: true}
+  ctx.response.body = { embed: doc, success: true}
 })
 
 router.post('/confirm_user', async (ctx) => {
@@ -157,15 +157,15 @@ router.post('/create_wishlist', async (ctx) => {
     throw new Error('Encryption failed. (field: title)')
   }
 
-  await mongo.database('wishlily').collection(`user_wishlists`).insertOne({
+  const wishlist = (await mongo.database('wishlily').collection(`user_wishlists`).insertOne({
       userId,
       title,
       address,
       color
-  })
+  }))
 
   ctx.response.status = 200
-  ctx.response.body = {success: true}
+  ctx.response.body = { wishlist, success: true}
 })
 
 router.post('/delete_item_from_wishlist', async (ctx) => {
