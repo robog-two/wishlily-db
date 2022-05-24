@@ -354,6 +354,8 @@ router.post('/edit_wishlist', async (ctx) => {
 router.post('/get_wishlist_info', async (ctx) => {
   const json = await ctx.request.body({type: 'json'}).value
 
+  console.log(json)
+
   const wishlistId = json.wishlistId.toString()
   if (!wishlistId.match(/^[a-f\d]{24}$/i)) {
     throw new Error('Wishlist ID failed to validate')
