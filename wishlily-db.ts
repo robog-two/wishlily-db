@@ -14,8 +14,6 @@ if (!isProd()) {
 
 const mongo = await connect()
 
-console.log(await mongo.database('wishlily').listCollectionNames())
-
 const router = new Router()
 
 router.post('/add_item_to_wishlist', async (ctx) => {
