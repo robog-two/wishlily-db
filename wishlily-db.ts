@@ -69,7 +69,7 @@ router.post('/add_item_to_wishlist', async (ctx) => {
   }))
 
   ctx.response.status = 200
-  ctx.response.body = { embed: doc, success: true}
+  ctx.response.body = { embed: { id: doc._id.toString(), ...doc }, success: true}
 })
 
 router.post('/confirm_user', async (ctx) => {
@@ -165,7 +165,7 @@ router.post('/create_wishlist', async (ctx) => {
   }))
 
   ctx.response.status = 200
-  ctx.response.body = { wishlist, success: true}
+  ctx.response.body = { wishlist: { id: wishlist._id.toString(), ...wishlist }, success: true}
 })
 
 router.post('/delete_item_from_wishlist', async (ctx) => {
