@@ -40,12 +40,16 @@ router.post('/add_item_to_wishlist', async (ctx) => {
     throw new Error('User ID failed to validate')
   }
 
-  const cover = `https://imagecdn.app/v2/image/${encodeURIComponent(json.cover.substr(0,2048))}?width=400&height=200&format=webp&fit=cover`
+  const embed = await (await fetch(`${Deno.env.get('ENVIRONMENT') === 'production' ? 'https://proxy.wishlily.app' : 'http://localhost:8081'}/generic/product?id=${encodeURIComponent(json.link)})`)).json()
 
-  const link = json.link.toString().substr(0,4096)
+  console.log(embed)
 
-  const title = json.title.toString().substr(0,64)
-  const price = json.price.toString().substr(0,32)
+  const cover = `https://imagecdn.app/v2/image/${encodeURIComponent(embed.cover)}?width=400&height=200&format=webp&fit=cover`
+
+  const link = embed.link
+
+  const title = embed.title
+  const price = embed.price
 
   const userKey = (await mongo.database('wishlily').collection('users').findOne({
     userId
@@ -65,7 +69,7 @@ router.post('/add_item_to_wishlist', async (ctx) => {
   });
 
   ctx.response.status = 200
-  ctx.response.body = {success: true}
+  ctx.response.body = { embed, success: true}
 })
 
 router.post('/confirm_user', async (ctx) => {
