@@ -3,10 +3,12 @@ import { CORS } from 'https://deno.land/x/oak_cors@v0.1.0/mod.ts';
 
 const router = new Router()
 
-router.get('/', async (req) => {
-  return {
+router.get('/', async (ctx) => {
+  ctx.response.status = 200
+  ctx.response.body = {
     message: '👒 WishLily Database API. https://wishlily.app/',
-    success: true
+    success: true,
+    env: (Deno.env.get('ENVIRONMENT') === 'production' ? undefined : Deno.env.get('ENVIRONMENT'))
   }
 })
 
