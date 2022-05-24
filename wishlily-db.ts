@@ -17,7 +17,7 @@ const mongo = await connect()
 const router = new Router()
 
 router.post('/add_item_to_wishlist', async (ctx) => {
-  const json = await ctx.request.body({type: 'json', limit: 0}).value
+  const json = await ctx.request.body({type: 'json'}).value
 
   const wishlistId = json.wishlistId.toString()
   if (!wishlistId.match(/^[a-f\d]{24}$/i)) {
