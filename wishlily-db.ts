@@ -17,7 +17,7 @@ const mongo = await connect()
 const router = new Router()
 
 router.post('/add_item_to_wishlist', async (ctx) => {
-  const json = await ctx.request.body({type: 'json'}).value
+  const json = await ctx.request.body({type: 'json', limit: 0}).value
 
   const wishlistId = json.wishlistId.toString()
   if (!wishlistId.match(/^[a-f\d]{24}$/i)) {
@@ -71,7 +71,7 @@ router.post('/add_item_to_wishlist', async (ctx) => {
 })
 
 router.post('/confirm_user', async (ctx) => {
-  const json = await ctx.request.body({type: 'json'}).value
+  const json = await ctx.request.body({type: 'json', limit: 0}).value
 
   const userId = json.userId.toString()
   // Matches a UUID but NOT the nil UUID
@@ -90,7 +90,7 @@ router.post('/confirm_user', async (ctx) => {
 })
 
 router.post('/create_user', async (ctx) => {
-  const json = await ctx.request.body({type: 'json'}).value
+  const json = await ctx.request.body({type: 'json', limit: 0}).value
 
   const userId = json.userId.toString()
   // Matches a UUID but NOT the nil UUID
@@ -113,7 +113,7 @@ router.post('/create_user', async (ctx) => {
 
 router.post('/create_wishlist', async (ctx) => {
   try {
-    const json = await ctx.request.body({type: 'json'}).value
+    const json = await ctx.request.body({type: 'json', limit: 0}).value
 
     console.log(json)
 
@@ -175,7 +175,7 @@ router.post('/create_wishlist', async (ctx) => {
 })
 
 router.post('/delete_item_from_wishlist', async (ctx) => {
-  const json = await ctx.request.body({type: 'json'}).value
+  const json = await ctx.request.body({type: 'json', limit: 0}).value
 
   const wishlistId = json.wishlistId.toString()
   if (!wishlistId.match(/^[a-f\d]{24}$/i)) {
@@ -219,7 +219,7 @@ router.post('/delete_item_from_wishlist', async (ctx) => {
 })
 
 router.post('/delete_user', async (ctx) => {
-  const json = await ctx.request.body({type: 'json'}).value
+  const json = await ctx.request.body({type: 'json', limit: 0}).value
 
   const userId = json.userId.toString()
   // Matches a UUID but NOT the nil UUID
@@ -245,7 +245,7 @@ router.post('/delete_user', async (ctx) => {
 })
 
 router.post('/delete_wishlist', async (ctx) => {
-  const json = await ctx.request.body({type: 'json'}).value
+  const json = await ctx.request.body({type: 'json', limit: 0}).value
 
   const wishlistId = json.wishlistId.toString()
   if (!wishlistId.match(/^[a-f\d]{24}$/i)) {
@@ -281,7 +281,7 @@ router.post('/delete_wishlist', async (ctx) => {
 })
 
 router.post('/edit_wishlist', async (ctx) => {
-  const json = await ctx.request.body({type: 'json'}).value
+  const json = await ctx.request.body({type: 'json', limit: 0}).value
 
   const userId = json.userId.toString()
   // Matches a UUID but NOT the nil UUID
@@ -350,7 +350,7 @@ router.post('/edit_wishlist', async (ctx) => {
 })
 
 router.post('/get_wishlist_info', async (ctx) => {
-  const json = await ctx.request.body({type: 'json'}).value
+  const json = await ctx.request.body({type: 'json', limit: 0}).value
 
   console.log(json)
 
@@ -389,7 +389,7 @@ router.post('/get_wishlist_info', async (ctx) => {
 })
 
 router.post('/list_wishlist', async (ctx) => {
-  const json = await ctx.request.body({type: 'json'}).value
+  const json = await ctx.request.body({type: 'json', limit: 0}).value
 
   const wishlistId = json.wishlistId.toString()
   if (!wishlistId.match(/^[a-f\d]{24}$/i)) {
@@ -410,26 +410,31 @@ router.post('/list_wishlist', async (ctx) => {
     throw new Error('User ID failed to validate')
   }
 
-  let proxiedResults: Object[] = []
-  await (await(await mongo.database('wishlily').collection(`wishes`).find({
-    userId,
-    wishlistId
-  })).toArray()).forEach(doc => {
-    proxiedResults.push({
-      title: doc.title,
-      price: doc.price,
-      cover: doc.cover,
-      link: doc.link,
-      id: doc._id.toString()
+  try {
+    let proxiedResults: Object[] = []
+    await (await(await mongo.database('wishlily').collection(`wishes`).find({
+      userId,
+      wishlistId
+    })).toArray()).forEach(doc => {
+      proxiedResults.push({
+        title: doc.title,
+        price: doc.price,
+        cover: doc.cover,
+        link: doc.link,
+        id: doc._id.toString()
+      })
     })
-  })
 
-  ctx.response.status = 200
-  ctx.response.body = proxiedResults
+    ctx.response.status = 200
+    ctx.response.body = proxiedResults ?? []
+  } catch (e) {
+    ctx.response.status = 200
+    ctx.response.body = []
+  }
 })
 
 router.post('/list_wishlists', async (ctx) => {
-  const json = await ctx.request.body({type: 'json'}).value
+  const json = await ctx.request.body({type: 'json', limit: 0}).value
 
   const userId = json.userId.toString()
   // Matches a UUID but NOT the nil UUID
