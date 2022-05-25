@@ -1,15 +1,12 @@
-import { Application, Router, Status } from 'https://deno.land/x/oak@v10.5.1/mod.ts'
-import { CORS } from 'https://deno.land/x/oak_cors@v0.1.0/mod.ts'
+import { Application, Router, Status } from 'https://deno.land/x/oak@v10.6.0/mod.ts'
+import { CORS } from 'https://deno.land/x/oak_cors@v0.1.1/mod.ts'
 import { config } from 'https://deno.land/x/dotenv@v3.2.0/mod.ts'
 import { isProd } from './isprod.ts'
 import { connect } from './mongo.ts'
-import { MongoClient, Bson } from "https://deno.land/x/mongo@v0.30.0/mod.ts"
+import { MongoClient, Bson } from 'https://deno.land/x/mongo@v0.30.0/mod.ts'
 
 if (!isProd()) {
-  let envs = config({})
-  for (const env in envs) {
-    Deno.env.set(env, envs[env])
-  }
+  config({})
 }
 
 const mongo = await connect()
@@ -38,9 +35,23 @@ router.post('/add_item_to_wishlist', async (ctx) => {
     throw new Error('User ID failed to validate')
   }
 
-  const embed = await (await fetch(`${Deno.env.get('ENVIRONMENT') === 'production' ? 'https://proxy.wishlily.app' : 'http://localhost:8080'}/generic/product?id=${encodeURIComponent(json.link)})`)).json()
+  const embed = await (await fetch(`${Deno.env.get('ENVIRONMENT') === 'production' ? 'https://proxy.wishlily.app' : 'http://localhost:8080'}/generic/product?id=${encodeURIComponent(json.link)}`)).json()
 
-  console.log(embed)
+  if (!embed.success) {
+    ctx.response.status = 500
+    ctx.response.body = {
+      message: embed.message ?? 'Unable to process link.',
+      success: false
+    }
+  }
+
+  if (embed.isSearch) {
+    ctx.response.status = 500
+    ctx.response.body = {
+      message: 'Unable to extract. Remove extra words, spaces, or symbols.',
+      success: false
+    }
+  }
 
   const cover = `https://imagecdn.app/v2/image/${encodeURIComponent(embed.cover)}?width=400&height=200&format=webp&fit=cover`
 
@@ -114,8 +125,6 @@ router.post('/create_user', async (ctx) => {
 router.post('/create_wishlist', async (ctx) => {
   try {
     const json = await ctx.request.body({type: 'json', limit: 0}).value
-
-    console.log(json)
 
     const userId = json.userId.toString()
     // Matches a UUID but NOT the nil UUID
@@ -352,8 +361,6 @@ router.post('/edit_wishlist', async (ctx) => {
 router.post('/get_wishlist_info', async (ctx) => {
   const json = await ctx.request.body({type: 'json', limit: 0}).value
 
-  console.log(json)
-
   const wishlistId = json.wishlistId.toString()
   if (!wishlistId.match(/^[a-f\d]{24}$/i)) {
     throw new Error('Wishlist ID failed to validate')
@@ -377,8 +384,6 @@ router.post('/get_wishlist_info', async (ctx) => {
     userId,
     '_id': new Bson.ObjectId(wishlistId)
   })
-
-  console.log(doc)
 
   ctx.response.status = 200
   ctx.response.body = {
@@ -478,6 +483,17 @@ router.get('/', async (ctx) => {
 
 const app = new Application()
 app.use(CORS({origin: '*'}))
+if (Deno.env.get('ENVIRONMENT') !== 'PRODUCTION') {
+  app.use(async (ctx, next) => {
+    const body = ctx.request.hasBody ? await ctx.request.body({type: 'json', limit: 0}).value : undefined
+    await next()
+    console.log('Request:')
+    console.log(ctx.request.method + ' ' + ctx.request.url)
+    console.log(body)
+    console.log('Response:')
+    console.log(ctx.response.body)
+  })
+}
 app.use(router.routes())
 app.use(router.allowedMethods())
 
