@@ -42,7 +42,7 @@ export function routes(router: Router, mongo: MongoClient): void {
       }
     }
 
-    const cover = `https://imagecdn.app/v2/image/${encodeURIComponent(embed.cover)}?width=400&height=200&format=webp&fit=cover`
+    const cover = embed.covers
 
     const link = embed.link
 
