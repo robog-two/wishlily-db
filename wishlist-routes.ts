@@ -199,7 +199,8 @@ export function routes(router: Router, mongo: MongoClient): void {
     ctx.response.body = {
       title: doc?.title,
       address: doc?.address,
-      color: doc?.color
+      color: doc?.color,
+      version: doc?.version,
     }
   })
 }
