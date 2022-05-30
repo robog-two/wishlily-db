@@ -42,7 +42,7 @@ export function routes(router: Router, mongo: MongoClient): void {
       }
     }
 
-    const cover = embed.covers
+    const cover = embed.cover
 
     const link = embed.link
 
