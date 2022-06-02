@@ -44,9 +44,9 @@ export function routes(router: Router, mongo: MongoClient): void {
 
     const cover = embed.cover
 
-    const link = embed.link
+    const link = embed.link ?? json.link
 
-    const title = embed.title
+    const title = embed.title ?? json.link
     const price = embed.price
 
     const userKey = (await mongo.database('wishlily').collection('users').findOne({
