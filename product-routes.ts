@@ -24,22 +24,17 @@ export function routes(router: Router, mongo: MongoClient): void {
       throw new Error('User ID failed to validate')
     }
 
-    const embed = await (await fetch(`${Deno.env.get('ENVIRONMENT') === 'production' ? 'https://proxy.wishlily.app' : 'http://localhost:8080'}/generic/product?id=${encodeURIComponent(json.link)}`)).json()
+    let embed
 
-    if (!embed.success) {
-      ctx.response.status = 500
-      ctx.response.body = {
-        message: embed.message ?? 'Unable to process link.',
-        success: false
-      }
+    try {
+      embed = await (await fetch(`${Deno.env.get('ENVIRONMENT') === 'production' ? 'https://proxy.wishlily.app' : 'http://localhost:8080'}/generic/product?id=${encodeURIComponent(json.link)}`)).json()
+    } catch (e) {
+      console.log(e)
     }
 
-    if (embed.isSearch) {
-      ctx.response.status = 500
-      ctx.response.body = {
-        message: 'Unable to extract. Remove extra words, spaces, or symbols.',
-        success: false
-      }
+    if (!embed.success || embed.isSearch) {
+      embed.link = undefined
+      embed.title = undefined
     }
 
     const cover = embed.cover
