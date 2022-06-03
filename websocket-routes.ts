@@ -41,7 +41,7 @@ export function routes(router: Router, mongo: MongoClient): void {
         wishCollection.updateOne({ _id: new Bson.ObjectId(wishId) }, {
           $set: { ...unified }
         })
-        sendEach({ action: 'replace-embed', embed: { id: wishId, ...embed }}, userId, wishlistId)
+        sendEach({ action: 'replace-embed', embed: { id: wishId, ...unified }}, userId, wishlistId)
       }
     }
   }
