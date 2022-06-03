@@ -32,8 +32,14 @@ export function routes(router: Router, mongo: MongoClient): void {
       const url = `${await domain('mathilda')}/generic/product?id=${encodeURIComponent(wish?.link.replaceAll('}', ''))}`
       const embed = await (await fetch(url)).json()
       if (embed.title != wish.title || embed.link != wish.link || embed.price != wish.price || embed.cover != wish.cover) {
+        const unified = { // If it's not in the new, use the old!
+          title: embed.title || wish.title,
+          link: embed.link || wish.link,
+          price: embed.price || wish.price,
+          cover: embed.cover || wish.cover,
+        }
         wishCollection.updateOne({ _id: new Bson.ObjectId(wishId) }, {
-          $set: { ...embed }
+          $set: { ...unified }
         })
         sendEach({ action: 'replace-embed', embed: { id: wishId, ...embed }}, userId, wishlistId)
       }
