@@ -1,6 +1,18 @@
 import { Router } from 'https://deno.land/x/oak@v10.6.0/mod.ts'
 import { MongoClient, Bson } from 'https://deno.land/x/mongo@v0.30.0/mod.ts'
 
+interface APIResult {
+  success: boolean
+  isSearch: boolean | undefined
+}
+
+interface Embed extends APIResult {
+  link: string | undefined
+  title: string | undefined
+  cover: string | undefined
+  price: string | undefined
+}
+
 export function routes(router: Router, mongo: MongoClient): void {
   router.post('/add_item_to_wishlist', async (ctx) => {
     const json = await ctx.request.body({type: 'json', limit: 0}).value
@@ -24,7 +36,8 @@ export function routes(router: Router, mongo: MongoClient): void {
       throw new Error('User ID failed to validate')
     }
 
-    let embed
+    // yucky
+    let embed: Embed | undefined
 
     try {
       embed = await (await fetch(`${Deno.env.get('ENVIRONMENT') === 'production' ? 'https://proxy.wishlily.app' : 'http://localhost:8080'}/generic/product?id=${encodeURIComponent(json.link)}`)).json()
@@ -32,17 +45,17 @@ export function routes(router: Router, mongo: MongoClient): void {
       console.log(e)
     }
 
-    if (!embed.success || embed.isSearch) {
+    if (embed && (!embed?.success || embed?.isSearch)) {
       embed.link = undefined
       embed.title = undefined
     }
 
-    const cover = embed.cover
+    const cover = embed?.cover
 
-    const link = embed.link ?? json.link
+    const link = embed?.link ?? json.link
 
-    const title = embed.title ?? json.link
-    const price = embed.price
+    const title = embed?.title ?? json.link
+    const price = embed?.price
 
     const userKey = (await mongo.database('wishlily').collection('users').findOne({
       userId
