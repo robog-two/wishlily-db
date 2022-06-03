@@ -29,7 +29,7 @@ export function routes(router: Router, mongo: MongoClient): void {
     const wish = await wishCollection.findOne({ _id: new Bson.ObjectId(wishId), wishlistId: wishlistId })
 
     if (wish) {
-      const url = `${await domain('mathilda')}/generic/product?id=${encodeURIComponent(wish?.link.replaceAll('}', ''))}`
+      const url = `${await domain('mathilda')}/generic/product?id=${encodeURIComponent(wish?.link)}`
       const embed = await (await fetch(url)).json()
       if (embed.title != wish.title || embed.link != wish.link || embed.price != wish.price || embed.cover != wish.cover) {
         const unified = { // If it's not in the new, use the old!
