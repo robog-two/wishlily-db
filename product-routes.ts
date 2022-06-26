@@ -65,6 +65,21 @@ export function routes(router: Router, mongo: MongoClient): void {
       throw new Error('User Key does not match!')
     }
 
+    const listLength = (await mongo.database('wishlily').collection('wishes').find({
+      userId,
+      wishlistId,
+    }).toArray()).length
+
+    if (listLength >= 15) {
+      // TODO: future subscription for addl storage?
+      ctx.response.body = {
+        message: 'Only 15 wishes allowed per list. May increase in the future.',
+        success: false
+      }
+      ctx.response.status = 500
+      return
+    }
+
     const oid = (await mongo.database('wishlily').collection(`wishes`).insertOne({
       userId,
       wishlistId,

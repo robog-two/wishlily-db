@@ -47,6 +47,20 @@ export function routes(router: Router, mongo: MongoClient): void {
         throw new Error('Encryption failed. (field: title)')
       }
 
+      const listLength = (await mongo.database('wishlily').collection('user_wishlists').find({
+        userId,
+      }).toArray()).length
+
+      if (listLength >= 6) {
+        // TODO: future subscription for addl storage?
+        ctx.response.body = {
+          message: 'Only 6 wishlists allowed per user. May increase in the future.',
+          success: false
+        }
+        ctx.response.status = 500
+        return
+      }
+
       const wishlist = (await mongo.database('wishlily').collection(`user_wishlists`).insertOne({
           userId,
           title,
