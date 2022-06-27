@@ -87,9 +87,9 @@ export function routes(router: Router, mongo: MongoClient): void {
     const oid = (await mongo.database('wishlily').collection(`wishes`).insertOne({
       userId,
       wishlistId,
-      cover,
-      title,
-      price,
+      // cover,
+      // title,
+      // price,
       link
     }))
 
