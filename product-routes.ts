@@ -40,7 +40,11 @@ export function routes(router: Router, mongo: MongoClient): void {
     let embed: Embed | undefined
 
     try {
-      embed = await (await fetch(`${Deno.env.get('ENVIRONMENT') === 'production' ? 'https://proxy.wishlily.app' : 'http://localhost:8080'}/generic/product?id=${encodeURIComponent(json.link)}`)).json()
+      embed = await (await fetch(`${Deno.env.get('ENVIRONMENT') === 'production' ? 'https://proxy.wishlily.app' : 'http://localhost:8080' }/generic/product?id=${encodeURIComponent(json.link)}`, {
+        headers: {
+          'Accept-Language': ctx.request.headers.get('Accept-Language') ?? 'en-US',
+        }
+      })).json()
     } catch (e) {
       console.log(e)
     }
