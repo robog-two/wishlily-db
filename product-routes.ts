@@ -36,22 +36,43 @@ export function routes(router: Router, mongo: MongoClient): void {
       throw new Error('User ID failed to validate')
     }
 
-    // yucky
+    const previousEmbed: Embed | undefined = await mongo.database('wishlily').collection('products').findOne({
+      link: json.link,
+    }) as Embed | undefined
+
+
     let embed: Embed | undefined
+    let embedUpsert: Promise<any> | undefined
 
-    try {
-      embed = await (await fetch(`${Deno.env.get('ENVIRONMENT') === 'production' ? 'https://proxy.wishlily.app' : 'http://localhost:8080' }/generic/product?id=${encodeURIComponent(json.link)}`, {
-        headers: {
-          'Accept-Language': ctx.request.headers.get('Accept-Language') ?? 'en-US',
-        }
-      })).json()
-    } catch (e) {
-      console.log(e)
-    }
+    if (previousEmbed) {
+      embed = previousEmbed
+    } else {
+      try {
+        embed = await (await fetch(`${Deno.env.get('ENVIRONMENT') === 'production' ? 'https://proxy.wishlily.app' : 'http://localhost:8080' }/generic/product?id=${encodeURIComponent(json.link)}`, {
+          headers: {
+            'Accept-Language': ctx.request.headers.get('Accept-Language') ?? 'en-US',
+          }
+        })).json()
+      } catch (e) {
+        console.log(e)
+      }
 
-    if (embed && (!embed?.success || embed?.isSearch)) {
-      embed.link = undefined
-      embed.title = undefined
+      if (embed && (!embed?.success || embed?.isSearch)) {
+        embed.link = undefined
+        embed.title = undefined
+      }
+
+      embedUpsert = mongo.database('wishlily').collection(`products`).updateOne(
+        { link: embed?.link ?? json.link },
+        {
+          $set: {
+            title: embed?.title ?? json.link,
+            price: embed?.price,
+            cover: embed?.cover
+          }
+        },
+        { upsert: true, }
+      )
     }
 
     const cover = embed?.cover
@@ -84,17 +105,69 @@ export function routes(router: Router, mongo: MongoClient): void {
       return
     }
 
-    const oid = (await mongo.database('wishlily').collection(`wishes`).insertOne({
-      userId,
-      wishlistId,
-      // cover,
-      // title,
-      // price,
-      link
-    }))
+    const doubleInsertResult = await Promise.all([
+      mongo.database('wishlily').collection(`wishes`).insertOne({
+        userId,
+        wishlistId,
+        link
+      }),
+      embedUpsert
+    ])
 
     ctx.response.status = 200
-    ctx.response.body = { embed: { id: oid.toString(), cover, title, price, link }, success: true}
+    ctx.response.body = { embed: { id: doubleInsertResult[1].toString(), link }, success: true}
+  })
+
+  router.post('/get_embed', async (ctx) => {
+    const json = await ctx.request.body({type: 'json'}).value
+
+    const previousEmbed: Embed | undefined = await mongo.database('wishlily').collection('products').findOne({
+      link: json.link,
+    }) as Embed | undefined
+
+
+    let embed: Embed | undefined
+
+    if (previousEmbed) {
+      embed = previousEmbed
+    } else {
+      try {
+        embed = await (await fetch(`${Deno.env.get('ENVIRONMENT') === 'production' ? 'https://proxy.wishlily.app' : 'http://localhost:8080' }/generic/product?id=${encodeURIComponent(json.link)}`, {
+          headers: {
+            'Accept-Language': ctx.request.headers.get('Accept-Language') ?? 'en-US',
+          }
+        })).json()
+      } catch (e) {
+        console.log(e)
+      }
+
+      if (embed && (!embed?.success || embed?.isSearch)) {
+        embed.link = undefined
+        embed.title = undefined
+      }
+
+      const cover = embed?.cover
+
+      const link = embed?.link ?? json.link
+
+      const title = embed?.title ?? json.link
+      const price = embed?.price
+
+      mongo.database('wishlily').collection(`products`).updateOne(
+        { link },
+        {
+          $set: {
+            title,
+            price,
+            cover
+          }
+        },
+        { upsert: true, }
+      )
+    }
+
+    ctx.response.status = 200
+    ctx.response.body = embed
   })
 
   router.post('/delete_item_from_wishlist', async (ctx) => {
@@ -170,9 +243,9 @@ export function routes(router: Router, mongo: MongoClient): void {
         wishlistId
       })).toArray()).forEach(doc => {
         proxiedResults.push({
-          title: doc.title,
-          price: doc.price,
-          cover: doc.cover,
+          // title: doc.title,
+          // price: doc.price,
+          // cover: doc.cover,
           link: doc.link,
           id: doc._id.toString()
         })
