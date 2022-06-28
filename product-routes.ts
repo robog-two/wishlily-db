@@ -66,6 +66,7 @@ export function routes(router: Router, mongo: MongoClient): void {
         { link: embed?.link ?? json.link },
         {
           $set: {
+            link: embed?.link ?? json.link,
             title: embed?.title ?? json.link,
             price: embed?.price,
             cover: embed?.cover
@@ -75,12 +76,7 @@ export function routes(router: Router, mongo: MongoClient): void {
       )
     }
 
-    const cover = embed?.cover
-
     const link = embed?.link ?? json.link
-
-    const title = embed?.title ?? json.link
-    const price = embed?.price
 
     const userKey = (await mongo.database('wishlily').collection('users').findOne({
       userId
@@ -157,6 +153,7 @@ export function routes(router: Router, mongo: MongoClient): void {
         { link },
         {
           $set: {
+            link,
             title,
             price,
             cover

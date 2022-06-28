@@ -29,7 +29,7 @@ export async function connect(): Promise<MongoClient> {
         },
       ],
       credential: {
-        username: 'deno-dp',
+        username: Deno.env.get('MONGO_USER'),
         password: Deno.env.get('MONGO_PWD'),
         db: 'wishlily',
         mechanism: 'SCRAM-SHA-1',
